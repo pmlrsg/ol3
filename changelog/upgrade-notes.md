@@ -1,5 +1,113 @@
 ## Upgrade notes
 
+### v3.7.0
+
+#### Removal of `ol.FeatureOverlay`
+
+Instead of an `ol.FeatureOverlay`, we now use an `ol.layer.Vector` with an
+`ol.source.Vector`. If you previously had:
+```js
+var featureOverlay = new ol.FeatureOverlay({
+  map: map,
+  style: overlayStyle
+});
+featureOverlay.addFeature(feature);
+featureOverlay.removeFeature(feature);
+var collection = featureOverlay.getFeatures();
+```
+you will have to change this to:
+```js
+var collection = new ol.Collection();
+var featureOverlay = new ol.layer.Vector({
+  map: map,
+  source: new ol.source.Vector({
+    features: collection,
+    useSpatialIndex: false // optional, might improve performance
+  }),
+  style: overlayStyle,
+  updateWhileAnimating: true, // optional, for instant visual feedback
+  updateWhileInteracting: true // optional, for instant visual feedback
+});
+featureOverlay.getSource().addFeature(feature);
+featureOverlay.getSource().removeFeature(feature);
+```
+
+With the removal of `ol.FeatureOverlay`, `zIndex` symbolizer properties of overlays are no longer stacked per map, but per layer/overlay. If you previously had multiple feature overlays where you controlled the rendering order of features by using `zIndex` symbolizer properties, you can now achieve the same rendering order only if all overlay features are on the same layer.
+
+Note that `ol.FeatureOverlay#getFeatures()` returned an `{ol.Collection.<ol.Feature>}`, whereas `ol.source.Vector#getFeatures()` returns an `{Array.<ol.Feature>}`.
+
+#### `ol.TileCoord` changes
+
+Until now, the API exposed two different types of `ol.TileCoord` tile coordinates: internal ones that increase left to right and upward, and transformed ones that may increase downward, as defined by a transform function on the tile grid. With this change, the API now only exposes tile coordinates that increase left to right and upward.
+
+Previously, tile grids created by OpenLayers either had their origin at the top-left or at the bottom-left corner of the extent. To make it easier for application developers to transform tile coordinates to the common XYZ tiling scheme, all tile grids that OpenLayers creates internally have their origin now at the top-left corner of the extent.
+
+This change affects applications that configure a custom `tileUrlFunction` for an `ol.source.Tile`. Previously, the `tileUrlFunction` was called with rather unpredictable tile coordinates, depending on whether a tile coordinate transform took place before calling the `tileUrlFunction`. Now it is always called with OpenLayers tile coordinates. To transform these into the common XYZ tiling scheme, a custom `tileUrlFunction` has to change the `y` value (tile row) of the `ol.TileCoord`:
+```js
+function tileUrlFunction = function(tileCoord, pixelRatio, projection) {
+  var urlTemplate = '{z}/{x}/{y}';
+  return urlTemplate
+      .replace('{z}', tileCoord[0].toString())
+      .replace('{x}', tileCoord[1].toString())
+      .replace('{y}', (-tileCoord[2] - 1).toString());
+}
+```
+
+The `ol.tilegrid.TileGrid#createTileCoordTransform()` function which could be used to get the tile grid's tile coordinate transform function has been removed. This function was confusing and should no longer be needed now that application developers get tile coordinates in a known layout.
+
+The code snippets below show how your application code needs to be changed:
+
+Old application code (with `ol.tilegrid.TileGrid#createTileCoordTransform()`):
+```js
+var transform = source.getTileGrid().createTileCoordTransform();
+var tileUrlFunction = function(tileCoord, pixelRatio, projection) {
+  tileCoord = transform(tileCoord, projection);
+  return 'http://mytiles.com/' +
+      tileCoord[0] + '/' + tileCoord[1] + '/' + tileCoord[2] + '.png';
+};
+```
+Old application code (with custom `y` transform):
+```js
+var tileUrlFunction = function(tileCoord, pixelRatio, projection) {
+  var z = tileCoord[0];
+  var yFromBottom = tileCoord[2];
+  var resolution = tileGrid.getResolution(z);
+  var tileHeight = ol.size.toSize(tileSize)[1];
+  var matrixHeight =
+      Math.floor(ol.extent.getHeight(extent) / tileHeight / resolution);
+  return 'http://mytiles.com/' +
+      tileCoord[0] + '/' + tileCoord[1] + '/' +
+      (matrixHeight - yFromBottom - 1) + '.png';
+
+};
+```
+New application code (simple -y - 1 transform):
+```js
+var tileUrlFunction = function(tileCoord, pixelRatio, projection) {
+  return 'http://mytiles.com/' +
+      tileCoord[0] + '/' + tileCoord[1] + '/' + (-tileCoord[2] - 1) + '.png';
+};
+```
+
+#### Removal of `ol.tilegrid.Zoomify`
+
+The replacement of `ol.tilegrid.Zoomify` is a plain `ol.tilegrid.TileGrid`, configured with `extent`, `origin` and `resolutions`. If the `size` passed to the `ol.source.Zoomify` source is `[width, height]`, then the extent for the tile grid will be `[0, -height, width, 0]`, and the origin will be `[0, 0]`.
+
+### v3.6.0
+
+#### `ol.interaction.Draw` changes
+
+* The `minPointsPerRing` config option has been renamed to `minPoints`. It is now also available for linestring drawing, not only for polygons.
+* The `ol.DrawEvent` and `ol.DrawEventType` types were renamed to `ol.interaction.DrawEvent` and `ol.interaction.DrawEventType`. This has an impact on your code only if your code is compiled together with ol3.
+
+#### `ol.tilegrid` changes
+
+* The `ol.tilegrid.XYZ` constructor has been replaced by a static `ol.tilegrid.createXYZ()` function. The `ol.tilegrid.createXYZ()` function takes the same arguments as the previous `ol.tilegrid.XYZ` constructor, but returns an `ol.tilegrid.TileGrid` instance.
+* The internal tile coordinate scheme for XYZ sources has been changed. Previously, the `y` of tile coordinates was transformed to the coordinates used by sources by calculating `-y-1`. Now, it is transformed by calculating `height-y-1`, where height is the number of rows of the tile grid at the zoom level of the tile coordinate.
+* The `widths` constructor option of `ol.tilegrid.TileGrid` and subclasses is no longer available, and it is no longer necessary to get proper wrapping at the 180° meridian. However, for `ol.tilegrid.WMTS`, there is a new option `sizes`, where each entry is an `ol.Size` with the `width` ('TileMatrixWidth' in WMTS capabilities) as first and the `height` ('TileMatrixHeight') as second entry of the array. For other tile grids, users can
+now specify an `extent` instead of `widths`. These settings are used to restrict the range of tiles that sources will request.
+* For `ol.source.TileWMS`, the default value of `warpX` used to be `undefined`, meaning that WMS requests with out-of-extent tile BBOXes would be sent. Now `wrapX` can only be `true` or `false`, and the new default is `true`. No application code changes should be required, but the resulting WMS requests for out-of-extent tiles will no longer use out-of-extent BBOXes, but ones that are shifted to real-world coordinates.
+
 ### v3.5.0
 
 #### `ol.Object` and `bindTo`
@@ -73,6 +181,29 @@
 
   See http://openlayers.org/en/master/examples/igc.html for a real example.
 
+* Note about KML
+
+  If you used `ol.source.KML`'s `extractStyles` or `defaultStyle` options, you will now have to set these options on `ol.format.KML` instead. For example, if you used:
+
+  ```js
+  var source = new ol.source.KML({
+    url: 'features.kml',
+    extractStyles: false,
+    projection: 'EPSG:3857'
+  });
+  ```
+
+  you will now use:
+
+  ```js
+  var source = new ol.source.Vector({
+    url: 'features.kml',
+    format: new ol.format.KML({
+      extractStyles: false
+    })
+  });
+  ```
+
 * The `ol.source.ServerVector` class has been removed. If you used it, for example as follows:
 
   ```js
@@ -115,6 +246,18 @@
 * When manually loading an image for `ol.style.Icon`, the image size should now be set
 with the `imgSize` option and not with `size`. `size` is supposed to be used for the
 size of a sub-rectangle in an image sprite.
+
+#### Support for non-square tiles
+
+The return value of `ol.tilegrid.TileGrid#getTileSize()` will now be an `ol.Size` array instead of a number if non-square tiles (i.e. an `ol.Size` array instead of a number as `tilsSize`) are used. To always get an `ol.Size`, the new `ol.size.toSize()` was added.
+
+#### Change to `ol.interaction.Draw`
+
+When finishing a draw, the `drawend` event is now dispatched before the feature is inserted to either the source or the collection. This change allows application code to finish setting up the feature.
+
+#### Misc.
+
+If you compile your application together with the library and use the `ol.feature.FeatureStyleFunction` type annotation (this should be extremely rare), the type is now named `ol.FeatureStyleFunction`.
 
 ### v3.4.0
 

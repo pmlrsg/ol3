@@ -30,6 +30,27 @@ describe('ol.proj', function() {
       ]);
     });
 
+    it('gives that custom 3413 is equivalent to self', function() {
+      var code = 'EPSG:3413';
+
+      var source = new ol.proj.Projection({
+        code: code
+      });
+
+      var destination = new ol.proj.Projection({
+        code: code
+      });
+
+      expect(ol.proj.equivalent(source, destination)).to.be.ok();
+    });
+
+    it('gives that default 3857 is equivalent to self', function() {
+      _testAllEquivalent([
+        'EPSG:3857',
+        'EPSG:3857'
+      ]);
+    });
+
     it('gives that CRS:84, urn:ogc:def:crs:EPSG:6.6:4326, EPSG:4326 are ' +
        'equivalent', function() {
           _testAllEquivalent([
@@ -115,6 +136,46 @@ describe('ol.proj', function() {
       expect(point[0]).to.roughlyEqual(-5.625, 1e-9);
       expect(point[1]).to.roughlyEqual(52.4827802220782, 1e-9);
     });
+  });
+
+  describe('canWrapX()', function() {
+
+    it('requires an extent for allowing wrapX', function() {
+      var proj = new ol.proj.Projection({
+        code: 'foo',
+        global: true
+      });
+      expect(proj.canWrapX()).to.be(false);
+      proj.setExtent([1, 2, 3, 4]);
+      expect(proj.canWrapX()).to.be(true);
+      proj = new ol.proj.Projection({
+        code: 'foo',
+        global: true,
+        extent: [1, 2, 3, 4]
+      });
+      expect(proj.canWrapX()).to.be(true);
+      proj.setExtent(null);
+      expect(proj.canWrapX()).to.be(false);
+    });
+
+    it('requires global to be true for allowing wrapX', function() {
+      var proj = new ol.proj.Projection({
+        code: 'foo',
+        extent: [1, 2, 3, 4]
+      });
+      expect(proj.canWrapX()).to.be(false);
+      proj.setGlobal(true);
+      expect(proj.canWrapX()).to.be(true);
+      proj = new ol.proj.Projection({
+        code: 'foo',
+        global: true,
+        extent: [1, 2, 3, 4]
+      });
+      expect(proj.canWrapX()).to.be(true);
+      proj.setGlobal(false);
+      expect(proj.canWrapX()).to.be(false);
+    });
+
   });
 
   describe('transformExtent()', function() {

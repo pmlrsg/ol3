@@ -32,12 +32,13 @@ ol.tilegrid.WMTS = function(options) {
   // FIXME: should the matrixIds become optionnal?
 
   goog.base(this, {
+    extent: options.extent,
     origin: options.origin,
     origins: options.origins,
     resolutions: options.resolutions,
     tileSize: options.tileSize,
     tileSizes: options.tileSizes,
-    widths: options.widths
+    sizes: options.sizes
   });
 
 };
@@ -69,11 +70,13 @@ ol.tilegrid.WMTS.prototype.getMatrixIds = function() {
  * Create a tile grid from a WMTS capabilities matrix set.
  * @param {Object} matrixSet An object representing a matrixSet in the
  *     capabilities document.
+ * @param {ol.Extent=} opt_extent An optional extent to restrict the tile
+ *     ranges the server provides.
  * @return {ol.tilegrid.WMTS} WMTS tileGrid instance.
  * @api
  */
 ol.tilegrid.WMTS.createFromCapabilitiesMatrixSet =
-    function(matrixSet) {
+    function(matrixSet, opt_extent) {
 
   /** @type {!Array.<number>} */
   var resolutions = [];
@@ -81,10 +84,10 @@ ol.tilegrid.WMTS.createFromCapabilitiesMatrixSet =
   var matrixIds = [];
   /** @type {!Array.<ol.Coordinate>} */
   var origins = [];
-  /** @type {!Array.<number>} */
+  /** @type {!Array.<ol.Size>} */
   var tileSizes = [];
-  /** @type {!Array.<number>} */
-  var widths = [];
+  /** @type {!Array.<ol.Size>} */
+  var sizes = [];
 
   var supportedCRSPropName = 'SupportedCRS';
   var matrixIdsPropName = 'TileMatrix';
@@ -108,28 +111,29 @@ ol.tilegrid.WMTS.createFromCapabilitiesMatrixSet =
   goog.array.forEach(matrixSet[matrixIdsPropName],
       function(elt, index, array) {
         matrixIds.push(elt[identifierPropName]);
+        var resolution = elt[scaleDenominatorPropName] * 0.28E-3 /
+            metersPerUnit;
+        var tileWidth = elt[tileWidthPropName];
+        var tileHeight = elt[tileHeightPropName];
         if (switchOriginXY) {
           origins.push([elt[topLeftCornerPropName][1],
             elt[topLeftCornerPropName][0]]);
         } else {
           origins.push(elt[topLeftCornerPropName]);
         }
-        resolutions.push(elt[scaleDenominatorPropName] * 0.28E-3 /
-            metersPerUnit);
-        var tileWidth = elt[tileWidthPropName];
-        var tileHeight = elt[tileHeightPropName];
-        goog.asserts.assert(tileWidth == tileHeight,
-            'square tiles are assumed, tileWidth (%s) ==  tileHeight (%s)',
-            tileWidth, tileHeight);
-        tileSizes.push(tileWidth);
-        widths.push(elt['MatrixWidth']);
+        resolutions.push(resolution);
+        tileSizes.push(tileWidth == tileHeight ?
+            tileWidth : [tileWidth, tileHeight]);
+        // top-left origin, so height is negative
+        sizes.push([elt['MatrixWidth'], -elt['MatrixHeight']]);
       });
 
   return new ol.tilegrid.WMTS({
+    extent: opt_extent,
     origins: origins,
     resolutions: resolutions,
     matrixIds: matrixIds,
     tileSizes: tileSizes,
-    widths: widths
+    sizes: sizes
   });
 };

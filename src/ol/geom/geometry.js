@@ -112,6 +112,8 @@ ol.geom.Geometry.prototype.closestPointXY = goog.abstractMethod;
 
 
 /**
+ * Return the closest point of the geometry to the passed point as
+ * {@link ol.Coordinate coordinate}.
  * @param {ol.Coordinate} point Point.
  * @param {ol.Coordinate=} opt_closestPoint Closest point.
  * @return {ol.Coordinate} Closest point.
@@ -227,6 +229,7 @@ ol.geom.Geometry.prototype.translate = goog.abstractMethod;
  *     string identifier or a {@link ol.proj.Projection} object.
  * @return {ol.geom.Geometry} This geometry.  Note that original geometry is
  *     modified in place.
+ * @api stable
  */
 ol.geom.Geometry.prototype.transform = function(source, destination) {
   this.applyTransform(ol.proj.getTransform(source, destination));

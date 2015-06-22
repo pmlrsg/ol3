@@ -152,6 +152,7 @@ goog.inherits(ol.interaction.Snap, ol.interaction.Pointer);
 
 
 /**
+ * Add a feature to the collection of features that we may snap to.
  * @param {ol.Feature} feature Feature.
  * @param {boolean=} opt_listen Whether to listen to the geometry change or not
  *     Defaults to `true`.
@@ -278,6 +279,7 @@ ol.interaction.Snap.prototype.handleGeometryModify_ = function(feature, evt) {
 
 
 /**
+ * Remove a feature from the collection of features that we may snap to.
  * @param {ol.Feature} feature Feature
  * @param {boolean=} opt_unlisten Whether to unlisten to the geometry change
  *     or not. Defaults to `true`.
@@ -581,7 +583,7 @@ ol.interaction.Snap.SegmentDataType;
 ol.interaction.Snap.handleEvent_ = function(evt) {
   var result = this.snapTo(evt.pixel, evt.coordinate, evt.map);
   if (result.snapped) {
-    evt.coordinate = result.vertex;
+    evt.coordinate = result.vertex.slice(0, 2);
     evt.pixel = result.vertexPixel;
   }
   return ol.interaction.Pointer.handleEvent.call(this, evt);

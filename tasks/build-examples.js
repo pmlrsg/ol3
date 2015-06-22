@@ -7,13 +7,49 @@ var marked = require('marked');
 var pkg = require('../package.json');
 
 var markupRegEx = /([^\/^\.]*)\.html$/;
-var cleanupJSRegEx = /.*(goog\.require(.*);|.*renderer: exampleNS\..*,?)[\n]*/g;
+var cleanupJSRegEx = /.*(goog\.require(.*);|.*renderer: common\..*,?)[\n]*/g;
+var requiresRegEx = /.*goog\.require\('(ol\.\S*)'\);/g;
 var isCssRegEx = /\.css$/;
 var isJsRegEx = /\.js$/;
 
-var srcDir = path.join(__dirname, '..', 'examples_src');
-var destDir = path.join(__dirname, '..', 'examples');
+var srcDir = path.join(__dirname, '..', 'examples');
+var destDir = path.join(__dirname, '..', 'build', 'examples');
 var templatesDir = path.join(__dirname, '..', 'config', 'examples');
+
+/**
+ * Returns an array of names that are explicitly required inside the source
+ * by calling `goog.require('ol.…')`.  Only returns `ol.` prefixed names.
+ *
+ * @param {string} src The JavaScript sourcecode to search for goog.require.
+ * @returns {Array.<string>} An array of `ol.*` names.
+ */
+function getRequires(src) {
+  var requires = [];
+  var match = requiresRegEx.exec(src);
+  while (match) {
+    requires.push(match[1]);
+    match = requiresRegEx.exec(src);
+  }
+  return requires;
+}
+
+/**
+ * Takes an array of the names of required OpenLayers symbols and returns an
+ * HTML-snippet with an unordered list to the API-docs for the particular
+ * classes.
+ *
+ * @param {Array.<string>} requires An array of `ol.` names that the source
+ *   requires.
+ * @returns {string} The HTML-snippet with the list of links to API-docs.
+ */
+function getLinkToApiHtml(requires) {
+  var lis = requires.map(function(symb) {
+    var href = '../apidoc/' + symb + '.html';
+    return '<li><a href="' + href + '" title="API documentation for ' +
+        symb +'">' + symb + '</a></li>';
+  });
+  return '<ul class="inline">' + lis.join() + '</ul>';
+}
 
 /**
  * A Metalsmith plugin that adds metadata to the example HTML files.  For each
@@ -46,10 +82,13 @@ function augmentExamples(files, metalsmith, done) {
       if (!(jsFilename in files)) {
         throw new Error('No .js file found for ' + filename);
       }
+      var jsSource = files[jsFilename].contents.toString();
+      var requires = getRequires(jsSource);
+      file.requires = requires;
       file.js = {
         tag: '<script src="loader.js?id=' + id + '"></script>',
-        source: files[jsFilename].contents.toString().replace(
-            cleanupJSRegEx, '')
+        source: jsSource.replace(cleanupJSRegEx, ''),
+        apiHtml: getLinkToApiHtml(requires)
       };
 
       // add css tag and source
@@ -90,10 +129,13 @@ function augmentExamples(files, metalsmith, done) {
  */
 function createWordIndex(exampleInfos) {
   var index = {};
-  var keys = ['shortdesc', 'title', 'tags'];
+  var keys = ['shortdesc', 'title', 'tags', 'requires'];
   exampleInfos.forEach(function(info, i) {
     keys.forEach(function(key) {
       var text = info[key];
+      if (Array.isArray(text)) {
+        text = text.join(' ');
+      }
       var words = text ? text.split(/\W+/) : [];
       words.forEach(function(word) {
         if (word) {
@@ -140,7 +182,8 @@ function createIndex(files, metalsmith, done) {
         example: filename,
         title: example.title,
         shortdesc: example.shortdesc,
-        tags: example.tags
+        tags: example.tags,
+        requires: example.requires
       });
     }
   }
@@ -158,6 +201,7 @@ function main(callback) {
   var smith = new Metalsmith('.')
       .source(srcDir)
       .destination(destDir)
+      .concurrency(25)
       .metadata({
         olVersion: pkg.version
       })

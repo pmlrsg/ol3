@@ -164,12 +164,15 @@ ol.extent.containsCoordinate = function(extent, coordinate) {
 
 
 /**
- * Check if one extent is contained by or on the edge of another.
+ * Check if one extent contains another.
+ *
+ * An extent is deemed contained if it lies completely within the other extent,
+ * including if they share one or more edges.
  *
  * @param {ol.Extent} extent1 Extent 1.
  * @param {ol.Extent} extent2 Extent 2.
- * @return {boolean} The first extent is contained by or on the edge of the
- *     second.
+ * @return {boolean} The second extent is contained by or on the edge of the
+ *     first.
  * @api stable
  */
 ol.extent.containsExtent = function(extent1, extent2) {
@@ -814,17 +817,20 @@ ol.extent.intersectsSegment = function(extent, start, end) {
       // potentially intersects top
       x = endX - ((endY - maxY) / slope);
       intersects = x >= minX && x <= maxX;
-    } else if (!!(endRel & ol.extent.Relationship.RIGHT) &&
+    }
+    if (!intersects && !!(endRel & ol.extent.Relationship.RIGHT) &&
         !(startRel & ol.extent.Relationship.RIGHT)) {
       // potentially intersects right
       y = endY - ((endX - maxX) * slope);
       intersects = y >= minY && y <= maxY;
-    } else if (!!(endRel & ol.extent.Relationship.BELOW) &&
+    }
+    if (!intersects && !!(endRel & ol.extent.Relationship.BELOW) &&
         !(startRel & ol.extent.Relationship.BELOW)) {
       // potentially intersects bottom
       x = endX - ((endY - minY) / slope);
       intersects = x >= minX && x <= maxX;
-    } else if (!!(endRel & ol.extent.Relationship.LEFT) &&
+    }
+    if (!intersects && !!(endRel & ol.extent.Relationship.LEFT) &&
         !(startRel & ol.extent.Relationship.LEFT)) {
       // potentially intersects left
       y = endY - ((endX - minX) * slope);

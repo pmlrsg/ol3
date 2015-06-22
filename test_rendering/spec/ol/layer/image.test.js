@@ -55,7 +55,7 @@ describe('ol.rendering.layer.Image', function() {
     beforeEach(function() {
       source = new ol.source.ImageStatic({
         url: 'spec/ol/data/tiles/osm/5/5/12.png',
-        imageExtent: new ol.tilegrid.XYZ({}).getTileCoordExtent(
+        imageExtent: ol.tilegrid.createXYZ().getTileCoordExtent(
             [5, 5, -12 - 1]),
         projection: ol.proj.get('EPSG:3857')
       });
@@ -91,4 +91,3 @@ goog.require('ol.Map');
 goog.require('ol.View');
 goog.require('ol.layer.Image');
 goog.require('ol.source.ImageStatic');
-goog.require('ol.tilegrid.XYZ');

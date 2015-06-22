@@ -164,8 +164,7 @@ The minimum config file looks like this:
       "node_modules/openlayers/externs/geojson.js",
       "node_modules/openlayers/externs/proj4js.js",
       "node_modules/openlayers/externs/tilejson.js",
-      "node_modules/openlayers/externs/topojson.js",
-      "node_modules/openlayers/externs/vbarray.js"
+      "node_modules/openlayers/externs/topojson.js"
     ],
     "define": [
       "goog.array.ASSUME_NATIVE_FUNCTIONS=true",
@@ -221,8 +220,7 @@ Here is a version of `config.json` with more compilation checks enabled:
       "node_modules/openlayers/externs/geojson.js",
       "node_modules/openlayers/externs/proj4js.js",
       "node_modules/openlayers/externs/tilejson.js",
-      "node_modules/openlayers/externs/topojson.js",
-      "node_modules/openlayers/externs/vbarray.js"
+      "node_modules/openlayers/externs/topojson.js"
     ],
     "define": [
       "goog.array.ASSUME_NATIVE_FUNCTIONS=true",
@@ -285,9 +283,9 @@ Here is a version of `config.json` with more compilation checks enabled:
 }
 ```
 
-## Create an HTML file for the Application
+## Create an HTML file for the Application
 
-You can now go ahead and create a simple HTML for the application. Create
+You can now go ahead and create a simple HTML for the application. Create
 a `index.html` file with the following content at the root the application
 directory:
 

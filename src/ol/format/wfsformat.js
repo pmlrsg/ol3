@@ -106,7 +106,7 @@ ol.format.WFS.SCHEMA_LOCATION = 'http://www.opengis.net/wfs ' +
  * Read all features from a WFS FeatureCollection.
  *
  * @function
- * @param {ArrayBuffer|Document|Node|Object|string} source Source.
+ * @param {Document|Node|Object|string} source Source.
  * @param {olx.format.ReadOptions=} opt_options Read options.
  * @return {Array.<ol.Feature>} Features.
  * @api stable
@@ -139,7 +139,9 @@ ol.format.WFS.prototype.readFeaturesFromNode = function(node, opt_options) {
 
 
 /**
- * @param {ArrayBuffer|Document|Node|Object|string} source Source.
+ * Read transaction response of the source.
+ *
+ * @param {Document|Node|Object|string} source Source.
  * @return {ol.format.WFS.TransactionResponse|undefined} Transaction response.
  * @api stable
  */
@@ -160,7 +162,9 @@ ol.format.WFS.prototype.readTransactionResponse = function(source) {
 
 
 /**
- * @param {ArrayBuffer|Document|Node|Object|string} source Source.
+ * Read feature collection metadata of the source.
+ *
+ * @param {Document|Node|Object|string} source Source.
  * @return {ol.format.WFS.FeatureCollectionMetadata|undefined}
  *     FeatureCollection metadata.
  * @api stable
@@ -617,6 +621,8 @@ ol.format.WFS.writeGetFeature_ = function(node, featureTypes, objectStack) {
 
 
 /**
+ * Encode format as WFS `GetFeature` and return the Node.
+ *
  * @param {olx.format.WFSWriteGetFeatureOptions} options Options.
  * @return {Node} Result.
  * @api stable
@@ -667,6 +673,8 @@ ol.format.WFS.prototype.writeGetFeature = function(options) {
 
 
 /**
+ * Encode format as WFS `Transaction` and return the Node.
+ *
  * @param {Array.<ol.Feature>} inserts The features to insert.
  * @param {Array.<ol.Feature>} updates The features to update.
  * @param {Array.<ol.Feature>} deletes The features to delete.
@@ -730,7 +738,7 @@ ol.format.WFS.prototype.writeTransaction = function(inserts, updates, deletes,
  * Read the projection from a WFS source.
  *
  * @function
- * @param {ArrayBuffer|Document|Node|Object|string} source Source.
+ * @param {Document|Node|Object|string} source Source.
  * @return {?ol.proj.Projection} Projection.
  * @api stable
  */

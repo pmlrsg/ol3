@@ -14,8 +14,8 @@ goog.require('goog.math');
 goog.require('goog.object');
 goog.require('goog.string');
 goog.require('ol.Feature');
+goog.require('ol.FeatureStyleFunction');
 goog.require('ol.color');
-goog.require('ol.feature');
 goog.require('ol.format.Feature');
 goog.require('ol.format.XMLFeature');
 goog.require('ol.format.XSD');
@@ -120,7 +120,7 @@ ol.format.KML = function(opt_options) {
 
   /**
    * @private
-   * @type {ol.feature.FeatureStyleFunction}
+   * @type {ol.FeatureStyleFunction}
    */
   this.featureStyleFunction_ =
       /**
@@ -1736,7 +1736,7 @@ ol.format.KML.prototype.readSharedStyleMap_ = function(node, objectStack) {
  * Read the first feature from a KML source.
  *
  * @function
- * @param {ArrayBuffer|Document|Node|Object|string} source Source.
+ * @param {Document|Node|Object|string} source Source.
  * @param {olx.format.ReadOptions=} opt_options Read options.
  * @return {ol.Feature} Feature.
  * @api stable
@@ -1769,7 +1769,7 @@ ol.format.KML.prototype.readFeatureFromNode = function(node, opt_options) {
  * Read all features from a KML source.
  *
  * @function
- * @param {ArrayBuffer|Document|Node|Object|string} source Source.
+ * @param {Document|Node|Object|string} source Source.
  * @param {olx.format.ReadOptions=} opt_options Read options.
  * @return {Array.<ol.Feature>} Features.
  * @api stable
@@ -1822,6 +1822,8 @@ ol.format.KML.prototype.readFeaturesFromNode = function(node, opt_options) {
 
 
 /**
+ * Read the name of the KML.
+ *
  * @param {Document|Node|string} source Souce.
  * @return {string|undefined} Name.
  * @api stable
@@ -1889,7 +1891,9 @@ ol.format.KML.prototype.readNameFromNode = function(node) {
 
 
 /**
- * @param {Document|Node|string} source Souce.
+ * Read the network links of the KML.
+ *
+ * @param {Document|Node|string} source Source.
  * @return {Array.<Object>} Network links.
  * @api
  */
@@ -1957,7 +1961,7 @@ ol.format.KML.prototype.readNetworkLinksFromNode = function(node) {
  * Read the projection from a KML source.
  *
  * @function
- * @param {ArrayBuffer|Document|Node|Object|string} source Source.
+ * @param {Document|Node|Object|string} source Source.
  * @return {ol.proj.Projection} Projection.
  * @api stable
  */
