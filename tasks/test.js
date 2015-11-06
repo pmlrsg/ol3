@@ -31,8 +31,11 @@ function listen(min, max, server, callback) {
         callback(err);
       }
     });
-    server.listen(port, '127.0.0.1', callback);
+    server.listen(port, '127.0.0.1');
   }
+  server.once('listening', function() {
+    callback(null);
+  });
   _listen(min);
 }
 
@@ -55,10 +58,7 @@ function runTests(includeCoverage, callback) {
       var address = server.address();
       var url = 'http://' + address.address + ':' + address.port;
       var args = [
-        path.join(
-          __dirname,
-          '../node_modules/mocha-phantomjs/lib/mocha-phantomjs.coffee'
-        ),
+        require.resolve('mocha-phantomjs-core'),
         url + '/test/index.html'
       ];
 
@@ -85,5 +85,3 @@ module.exports = {
   runTests: runTests,
   listen: listen
 };
-
-
